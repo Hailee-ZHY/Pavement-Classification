@@ -1,0 +1,6 @@
+# Ignore dataset folder
+dataset/
+
+# Ignore data files
+EDA.py
+Module.py
