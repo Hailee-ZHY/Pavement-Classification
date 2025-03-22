@@ -1,0 +1,5 @@
+1. 如果SAM输出的仅仅只是pavement的分类的话
+2. 首先要对road marking进行segmentation, 然后再对提取出来的内容进行classification
+3. segmentation这一步有几个可选的方案: DeepLabv3, U-Net, SegFormer/Swin-Unet(Transformer类) - 感觉后两个比较可行
+这些需要的输入都是TiFF格式图像，输出都是Binary marking进行segmentation
+4. 基于Mask的结果放入ViT进行分类是
