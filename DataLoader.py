@@ -13,6 +13,10 @@ from rasterio.plot import show
 import matplotlib.pyplot as plt
 import rasterio.windows
 from shapely.geometry import box
+import os
+import json
+import cv2
+from rasterio.features import rasterize
 
 class DataLoader():
     def __init__(self, tiff_path = "./dataset/NWM_INT_PAINT.tiff", shp_path = "./dataset/NWM_paint/NWM_paint/paint.shp"):
@@ -71,6 +75,85 @@ class DataLoader():
         plt.title("region Tiff & Shp check")
         plt.show()
 
+class SegmentationPreprocessor:
+    def __init__(self, data_loader, patch_size = 512, save_dir = "out_put"):
+        self.tiff_data = data_loader.tiff_data ## tiff_data本身绑定在DataLoader这个类的self上
+        self.tiff_profile = data_loader.tiff_profile
+        self.transform = self.tiff_profile["transform"]   
+        self.crs = self.tiff_profile["crs"]
+        self.shp_data = data_loader.shp_data
+        
+        self.patch_size = patch_size
+        self.save_dir = save_dir
+        self.image_dir = os.path.join(save_dir, "images")
+        self.mask_dir = os.path.join(save_dir, "masks")
+        self.label_map_path = os.path.join(save_dir, "label_mapping.json")
+        
+        os.makedirs(self.image_dir, exist_ok = True)
+        os.makedirs(self.label_map_path, exist_ok= True)
+
+        self.label2id = self._build_label_map()
+
+    def _build_label_map(self):
+        ### 这里对shp的type还要有一个预处理没有写进来
+        unique_labels = self.shp_data["type"].unique()
+        label2id = {label: idx+1 for idx, label in enumerate(sorted(unique_labels))}
+        with open(self.label_map_path, "w") as f:
+            json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
+        return label2id
+
+    def _rasterize_mask(self, shapes, out_shapes):
+        return rasterize(
+            shapes, 
+            out_shape=out_shapes,
+            transform=self.transform,
+            fill=0, # 除了shape外的background都是0
+            dtype="unit8",
+        )
+    
+    def generate_patches(self):
+        height, width = self.tiff_data.shape
+        count = 0 # 用于生成patch编号
+
+        for y in range(0, height, self.patch_size):
+            for x in range(0, width, self.patch_size):
+                window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # 创建了一个patch size的矩形窗口
+                patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # 从tiff中汲截取一个patch, 和window的范围对应，这个数据会输入模型进行训练
+
+                # calculate geospatial bounds of this patch
+                patch_transform = rasterio.windows.transform(window, self.transform) # 这里用到了上面定义的矩形窗口，并对这个区域的范围进行了affine变换(像素->地理坐标)
+                patch_bounds = rasterio.windows.bounds(window, self.transform) # 返回的是(x_min, y_min, x_max, y_max)
+                patch_box = box(*patch_bounds) #用来构造一个shapely的矩形polygon区域，用来和shp的集合做交集判断，判断就在下面
+
+                # Clip SHP to patch bounds
+                clipped = self.shp_data[self.shp_data.intersects(patch_box)].copy() 
+                if clipped.empty(): # 如果这个patch_box中不包含shp文件中标记的road_marking的话，就略过它
+                    continue 
+
+                # convert geometries to (geometry, class_id) tuples
+                shapes = [
+                    (geom, self.label2id[row["type"]])
+                    for _, row in clipped.iterrows()
+                    for geom in row.geometry.geoms if hasattr(row.geometry, "geom")    
+                ] if clipped.geometry.iloc[0].geom_type == "MultiPolygon" else [
+                    (row.geometry, self.label2id[row["type"]]) for _, row in clipped.iterrows()
+                ]
+
+                mask = self._rasterize_mask(shapes, out_shapes=(self.patch_size, self.patch_size))
+
+                # Skip patches without any label
+                if mask.max() == 0:
+                    continue 
+
+                # save images and masks
+                img_name = f"patch_{count:04d}.png"
+                mask_name = f"patch_{count:04d}_mask.png"
+
+                cv2.imwrite(os.path.join(self.image_dir, img_name), patch)
+                cv2.imwrite(os.path.join(self.mask_dir, mask_name), mask)
+                count += 1
+        print(f"Generated {count} image-mask pairs in '{self.save_dir}'")
+        ## 到目前为止对用于segmentation的数据进行了预处理，但是没有对type进行过滤，明天要开始看一下segmentation的模型了，并且把这个模块的注释补全
 
 ## Test
 # data_loader = DataLoader()
