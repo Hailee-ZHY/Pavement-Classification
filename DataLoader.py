@@ -41,7 +41,7 @@ class DataLoader():
         return tiff_data, tiff_profile, tiff_crs
 
     def _load_shp(self):
-        shp_data = gpd.read_file(self.shp_path)
+        shp_data = gpd.read_file(self.shp_path) # GeoDataFrame,有geopandas的属性
         shp_crs = shp_data.crs
         return shp_data, shp_crs
 
@@ -97,7 +97,7 @@ class SegmentationPreprocessor:
     def _build_label_map(self):
         ### 这里对shp的type还要有一个预处理没有写进来
         unique_labels = self.shp_data["type"].unique()
-        label2id = {label: idx+1 for idx, label in enumerate(sorted(unique_labels))}
+        label2id = {label: idx+1 for idx, label in enumerate(sorted(unique_labels))} ## unique_label有none要预处理
         with open(self.label_map_path, "w") as f:
             json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
         return label2id
@@ -111,12 +111,17 @@ class SegmentationPreprocessor:
             dtype="unit8",
         )
     
-    def generate_patches(self):
+    def generate_patches(self, max_patches):
         height, width = self.tiff_data.shape
         count = 0 # 用于生成patch编号
 
         for y in range(0, height, self.patch_size):
             for x in range(0, width, self.patch_size):
+
+                if count >= max_patches:
+                    print(f"Stop: Generated {count} patches")
+                    return
+
                 window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # 创建了一个patch size的矩形窗口
                 patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # 从tiff中汲截取一个patch, 和window的范围对应，这个数据会输入模型进行训练
 
@@ -131,15 +136,17 @@ class SegmentationPreprocessor:
                     continue 
 
                 # convert geometries to (geometry, class_id) tuples
+                ## 这里是在对上面得到的clipped处理，clipped是GeoDataFrame
                 shapes = [
                     (geom, self.label2id[row["type"]])
-                    for _, row in clipped.iterrows()
-                    for geom in row.geometry.geoms if hasattr(row.geometry, "geom")    
+                    for _, row in clipped.iterrows() # .iterow(): pandas & gpd中常见的按行迭代的方式，得到(index, row)
+                    for geom in row.geometry.geoms # 取出每个Multi Polygon里的所有polygon
+                    if hasattr(row.geometry, "geoms") # 检查row是否有geom这个属性; 列表推导式中，if在for后面是推导式
                 ] if clipped.geometry.iloc[0].geom_type == "MultiPolygon" else [
-                    (row.geometry, self.label2id[row["type"]]) for _, row in clipped.iterrows()
-                ]
+                    (row.geometry, self.label2id[row["type"]]) for _, row in clipped.iterrows() # row是geopandas中的一个series, 属性(type, geometry)
+                ] # 先判断是CLIPPED是不是Multipolygen类型（即一个对象里包含多个polygon，比如几个箭头的组合），如果是的话，就展开每个小polygon
 
-                mask = self._rasterize_mask(shapes, out_shapes=(self.patch_size, self.patch_size))
+                mask = self._rasterize_mask(shapes, out_shapes=(self.patch_size, self.patch_size)) # 输入矢量图，输出二维像素Mask图
 
                 # Skip patches without any label
                 if mask.max() == 0:
@@ -153,8 +160,4 @@ class SegmentationPreprocessor:
                 cv2.imwrite(os.path.join(self.mask_dir, mask_name), mask)
                 count += 1
         print(f"Generated {count} image-mask pairs in '{self.save_dir}'")
-        ## 到目前为止对用于segmentation的数据进行了预处理，但是没有对type进行过滤，明天要开始看一下segmentation的模型了，并且把这个模块的注释补全
-
-## Test
-# data_loader = DataLoader()
-# data_loader.plot_data()
+        ## 到目前为止对用于segmentation的数据进行了预处理，但是没有对type进行过滤，明天要开始看一下segmentation的模型了
