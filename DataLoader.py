@@ -17,6 +17,7 @@ import os
 import json
 import cv2
 from rasterio.features import rasterize
+import numpy as np
 
 class DataLoader():
     def __init__(self, tiff_path = "./dataset/NWM_INT_PAINT.tiff", shp_path = "./dataset/NWM_paint/NWM_paint/paint.shp"):
@@ -90,37 +91,70 @@ class SegmentationPreprocessor:
         self.label_map_path = os.path.join(save_dir, "label_mapping.json")
         
         os.makedirs(self.image_dir, exist_ok = True)
-        os.makedirs(self.label_map_path, exist_ok= True)
+        os.makedirs(self.mask_dir, exist_ok= True)
 
         self.label2id = self._build_label_map()
 
-    def _build_label_map(self):
-        ### 这里对shp的type还要有一个预处理没有写进来
-        unique_labels = self.shp_data["type"].unique()
-        label2id = {label: idx+1 for idx, label in enumerate(sorted(unique_labels))} ## unique_label有none要预处理
+    def _build_label_map(self, freq=5):
+        ## 首先对type数据进行预处理，处理逻辑写在README了
+
+        label_clean_map = {
+            "arow": "arrow",
+            "biike": "bike", "bikew": "bike", "bikwe": "bike", "bikw": "bike",
+            "bus only": "bus",
+            "bmp": "bump", "bumpp": "bump",
+            "cw": "crosswalk", "cw'": "crosswalk", "cross": "crosswalk",
+            "ds": "double_solid",
+            "dsb": "double_solid_broken",
+            "hashy": "hash", "hahs": "hash",
+            "pedesterian": "pedestrian",
+            "do not stop": "do_not_stop", "do nots stop": "do_not_stop",
+            "sb": "single_broken",
+            "ss": "single_solid", "ssl": "single_solid", "ssy": "single_solid", "solid": "ssingle_solid",
+            "sl": "stopline", "stop line": "stopline", 
+        }
+
+        raw_labels = self.shp_data["type"].dropna().astype(str).str.lower()
+        clean_labels = raw_labels.apply(lambda x: label_clean_map.get(x,x)) #.get(x,x)在字典中寻找x对应的value，如果有的话就返回对应value, 如果没有的话就返回x自身
+        
+        # 统计频数，只返回大于设定频数的值
+        label_count = clean_labels.value_counts()
+        freq_labels = label_count[label_count>=freq].index.tolist()
+
+        clean_labels = clean_labels.apply(lambda x: x if x in freq_labels else None)
+        self.shp_data["type"] = clean_labels
+        
+        unique_labels = sorted(set(label for label in clean_labels if label is not None))
+        label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label有none要预处理
+
         with open(self.label_map_path, "w") as f:
             json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
         return label2id
 
-    def _rasterize_mask(self, shapes, out_shapes):
-        return rasterize(
+    def _rasterize_mask(self, shapes, out_shape, transform):
+        # print("Rasterizing shape count:", len(shapes))
+        # if shapes:
+        #     print("First shape geometry:", shapes[0][0])
+        #     print("First shape label ID:", shapes[0][1])
+
+        mask = rasterize(
             shapes, 
-            out_shape=out_shapes,
-            transform=self.transform,
+            out_shape=out_shape,
+            transform=transform,
             fill=0, # 除了shape外的background都是0
-            dtype="unit8",
+            dtype="uint8",
+            all_touched=True
         )
+
+        # print("Mask unique values:", np.unique(mask))
+        return mask
     
-    def generate_patches(self, max_patches):
+    def generate_patches(self):
         height, width = self.tiff_data.shape
         count = 0 # 用于生成patch编号
 
         for y in range(0, height, self.patch_size):
             for x in range(0, width, self.patch_size):
-
-                if count >= max_patches:
-                    print(f"Stop: Generated {count} patches")
-                    return
 
                 window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # 创建了一个patch size的矩形窗口
                 patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # 从tiff中汲截取一个patch, 和window的范围对应，这个数据会输入模型进行训练
@@ -132,21 +166,27 @@ class SegmentationPreprocessor:
 
                 # Clip SHP to patch bounds
                 clipped = self.shp_data[self.shp_data.intersects(patch_box)].copy() 
-                if clipped.empty(): # 如果这个patch_box中不包含shp文件中标记的road_marking的话，就略过它
+                if clipped.empty: # 如果这个patch_box中不包含shp文件中标记的road_marking的话，就略过它
+                    # print(f"Skipping patch ({x}, {y}) — no shp data in this region.") # debug
                     continue 
+                # print(f"Patch ({x}, {y}) has {len(clipped)} shape(s)") # debug
+                # print("Sample labels in patch:", clipped['type'].unique()) # debug
 
                 # convert geometries to (geometry, class_id) tuples
                 ## 这里是在对上面得到的clipped处理，clipped是GeoDataFrame
                 shapes = [
                     (geom, self.label2id[row["type"]])
                     for _, row in clipped.iterrows() # .iterow(): pandas & gpd中常见的按行迭代的方式，得到(index, row)
+                    if row["type"] is not None and row["type"] in self.label2id
                     for geom in row.geometry.geoms # 取出每个Multi Polygon里的所有polygon
                     if hasattr(row.geometry, "geoms") # 检查row是否有geom这个属性; 列表推导式中，if在for后面是推导式
                 ] if clipped.geometry.iloc[0].geom_type == "MultiPolygon" else [
-                    (row.geometry, self.label2id[row["type"]]) for _, row in clipped.iterrows() # row是geopandas中的一个series, 属性(type, geometry)
+                    (row.geometry, self.label2id[row["type"]]) 
+                    for _, row in clipped.iterrows()
+                    if row["type"] is not None and row["type"] in self.label2id # row是geopandas中的一个series, 属性(type, geometry)
                 ] # 先判断是CLIPPED是不是Multipolygen类型（即一个对象里包含多个polygon，比如几个箭头的组合），如果是的话，就展开每个小polygon
 
-                mask = self._rasterize_mask(shapes, out_shapes=(self.patch_size, self.patch_size)) # 输入矢量图，输出二维像素Mask图
+                mask = self._rasterize_mask(shapes, out_shape=(self.patch_size, self.patch_size), transform=patch_transform) # 输入矢量图，输出二维像素Mask图
 
                 # Skip patches without any label
                 if mask.max() == 0:
@@ -160,4 +200,3 @@ class SegmentationPreprocessor:
                 cv2.imwrite(os.path.join(self.mask_dir, mask_name), mask)
                 count += 1
         print(f"Generated {count} image-mask pairs in '{self.save_dir}'")
-        ## 到目前为止对用于segmentation的数据进行了预处理，但是没有对type进行过滤，明天要开始看一下segmentation的模型了

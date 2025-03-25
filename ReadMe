@@ -1,5 +1,71 @@
 1. 如果SAM输出的仅仅只是pavement的分类的话
 2. 首先要对road marking进行segmentation, 然后再对提取出来的内容进行classification
 3. segmentation这一步有几个可选的方案: DeepLabv3, U-Net, SegFormer/Swin-Unet(Transformer类) - 感觉后两个比较可行
-这些需要的输入都是TiFF格式图像，输出都是Binary marking进行segmentation
+这些需要的输入都是TiFF格式图像, 输出都是Binary marking进行segmentation
 4. 基于Mask的结果放入ViT进行分类是
+
+images 用于训练
+masks 用于监督
+
+"""
+type字段的原始信息:
+['ss' 'rrx' 'sl' 'arrow' 'cw' 'rod' 'do not stop' 'sb' 'hov' 'lane' 'bus'
+ 'ds' 'bike' 'hash' 'bump' 'bs' 'arow' 'CW' 'SS' 's' 'ump' 'BIKE' 'SL'
+ 'ssY' 'BUMP' 'DO NOT STOP' 'ssy' 'p' 'ar' 'bumpp' None 'dsb' 'wheelchair'
+ 'pedesterian' 'bike lane' 'cross' 'hahs' 'DS' 'yy' 'bikew' 'do nots stop'
+ 'Hash' 'r' 'bmp' 'bus only' 'hike' 'slow' 'bikwe' 'bikw' 'biike' 'sr' 'l'
+ "cw' 'ssl' 'hashy' 'hashY' 'HASH' 'csl' 'stop line' 'solid']
+ 处理方式：
+1. 全部统一为小写
+2. 去掉None值
+3. 
+
+ss: single solid 
+rrx: 
+sl: stop line
+arrow 
+cw: cross work 
+rod: 
+do not stop
+sb: single broken
+hov 
+lane 
+bus
+ds: double solid 
+bike
+hash 
+bump 
+bs 
+arow
+s
+ump 
+ssy 
+p 
+ar 
+bumpp
+dsb 
+wheelchair 
+pedesterian 
+bike lane 
+cross 
+hahs 
+yy
+bikew 
+do nots stop 
+r 
+bmp
+bus only 
+hike 
+slow 
+bikwe 
+bikw
+biike 
+sr 
+l 
+cw
+ssl 
+hashy 
+csl 
+stop line 
+solid
+"""
