@@ -23,7 +23,6 @@ from torch.utils.data import Dataset
 import albumentations as A 
 from albumentations.pytorch import ToTensorV2
 
-
 class DataLoader():
     def __init__(self, tiff_path = "./dataset/NWM_INT_PAINT.tiff", shp_path = "./dataset/NWM_paint/NWM_paint/paint.shp"):
  
@@ -205,35 +204,3 @@ class SegmentationPreprocessor:
                 cv2.imwrite(os.path.join(self.mask_dir, mask_name), mask)
                 count += 1
         print(f"Generated {count} image-mask pairs in '{self.save_dir}'")
-
-class RoadMarkingDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, transform = None):
-        self.image_dir = image_dir
-        self.mask_dir = mask_dir
-        self.tranform = transform
-
-        self.image_files = sorted([f for f in os.listdir(self.image_dir) if f.endswith('.png')])
-        self.mask_files = [f.replace(".png", "_mask.png") for f in self.image_files]
-    
-    def __len__(self):
-        return len(self.image_files)
-    
-    def __getitem__(self, idx):
-        img_path = os.path.join(self.image_dir, self.image_files[idx])
-        msk_path = os.path.join(self.mask_dir, self.mask_files[idx])
-
-        image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE) # shape: (H,W)
-        image = np.stack([image]*3, axis = 1) # convert to 3 channels: (H,W,3)? 这种处理是否合理？
-        mask = cv2.imread(msk_path, cv2.IMREAD_GRAYSCALE)
-
-        # 如果传入了的augmentation的transform就用，否则就直接将原始数据转化为的tensor
-        if self.tranform:
-            augmented = self.tranform(image=image, mask = mask)
-            image = augmented["image"]
-            mask = augmented["mask"]
-        else: 
-            image = A.ToFloat()(image=image)["image"] # to float 32
-            image = ToTensorV2()(image = image)["image"] # to [C,H,W]
-            mask = torch.from_numpy(mask).long() # 把tensor的dtype转为long, which is int64
-        
-        return image, mask
