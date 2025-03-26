@@ -1,6 +1,7 @@
 # Ignore dataset folder
 dataset/
 out_put/
+splits/
 
 # Ignore data files
 EDA.py
