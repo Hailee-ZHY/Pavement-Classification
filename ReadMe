@@ -7,6 +7,11 @@
 images 用于训练
 masks 用于监督
 
+split_dataset 这个文件只用运行一次来划分数据, 需要用在DataLoader后, DataProcessor前
+
+2025/03/25
+写完了DataProcessor，增加了augmentation，验证了datasetprocessor的可行性
+
 """
 type字段的原始信息:
 ['ss' 'rrx' 'sl' 'arrow' 'cw' 'rod' 'do not stop' 'sb' 'hov' 'lane' 'bus'
