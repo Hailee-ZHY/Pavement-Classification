@@ -34,6 +34,8 @@ class RoadMarkingDataset(Dataset):
         return len(self.image_files)
     
     def __getitem__(self, idx):
+        print(f"[debug] Getting sample idx: {idx}")
+
         img_path = os.path.join(self.image_dir, self.image_files[idx])
         msk_path = os.path.join(self.mask_dir, self.mask_files[idx])
 
@@ -43,6 +45,11 @@ class RoadMarkingDataset(Dataset):
         # print("image after stack:", type(image), image.shape) # debug
         mask = cv2.imread(msk_path, cv2.IMREAD_GRAYSCALE)
 
+        # debug
+        if image is None or mask is None:
+            print(f"load failed: idx = {idx}, image = {img_path}, mask = {msk_path}")
+            return None
+
         # 如果传入了的augmentation的transform就用，否则就直接将原始数据转化为的tensor
         if self.transform:
             augmented = self.transform(image=image, mask = mask)
@@ -50,7 +57,7 @@ class RoadMarkingDataset(Dataset):
             mask = augmented["mask"]
         else: 
             image = A.ToFloat()(image=image)["image"] # to float 32
-            print("image before ToFloat:", type(image), image.shape) # debug
+            # print("image before ToFloat:", type(image), image.shape) # debug
             image = torch.from_numpy(image).permute(2, 0, 1).float()  # [H,W,C] → [C,H,W]
             mask = torch.from_numpy(mask).long() # 把tensor的dtype转为long, which is int64
         return image, mask

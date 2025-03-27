@@ -5,5 +5,4 @@ splits/
 
 # Ignore data files
 EDA.py
-Module.py
 test.py
