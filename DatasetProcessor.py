@@ -49,12 +49,16 @@ class RoadMarkingDataset(Dataset):
         if image is None or mask is None:
             print(f"load failed: idx = {idx}, image = {img_path}, mask = {msk_path}")
             return None
+        
+        if image.shape[:2] != mask.shape[:2]:
+            print(f"[ERROR] Shape mismatch! image shape: {image.shape}, mask shape: {mask.shape}")
+            return None  # 跳过不合法样本
 
         # 如果传入了的augmentation的transform就用，否则就直接将原始数据转化为的tensor
         if self.transform:
             augmented = self.transform(image=image, mask = mask)
             image = augmented["image"]
-            mask = augmented["mask"]
+            mask = augmented["mask"].long()
         else: 
             image = A.ToFloat()(image=image)["image"] # to float 32
             # print("image before ToFloat:", type(image), image.shape) # debug

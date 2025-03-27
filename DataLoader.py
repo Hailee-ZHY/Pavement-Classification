@@ -129,7 +129,7 @@ class SegmentationPreprocessor:
         self.shp_data["type"] = clean_labels
         
         unique_labels = sorted(set(label for label in clean_labels if label is not None))
-        label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label有none要预处理
+        label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label有none要预处理, 为了满足corssentropy, label从0开始
 
         with open(self.label_map_path, "w") as f:
             json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
@@ -163,6 +163,11 @@ class SegmentationPreprocessor:
                 window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # 创建了一个patch size的矩形窗口
                 patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # 从tiff中汲截取一个patch, 和window的范围对应，这个数据会输入模型进行训练
 
+                # 如果的image的size 不是512*512的话，跳过，因为在test中检查了，只有 三张是不符合的
+                if patch.shape[0] != self.patch_size or patch.shape[1] != self.patch_size:
+                    print(f"Skipping patch {count:04d} due to image size: {patch.shape}")
+                    continue
+
                 # calculate geospatial bounds of this patch
                 patch_transform = rasterio.windows.transform(window, self.transform) # 这里用到了上面定义的矩形窗口，并对这个区域的范围进行了affine变换(像素->地理坐标)
                 patch_bounds = rasterio.windows.bounds(window, self.transform) # 返回的是(x_min, y_min, x_max, y_max)
@@ -171,11 +176,7 @@ class SegmentationPreprocessor:
                 # Clip SHP to patch bounds
                 clipped = self.shp_data[self.shp_data.intersects(patch_box)].copy() 
                 if clipped.empty: # 如果这个patch_box中不包含shp文件中标记的road_marking的话，就略过它
-                    # print(f"Skipping patch ({x}, {y}) — no shp data in this region.") # debug
                     continue 
-                # print(f"Patch ({x}, {y}) has {len(clipped)} shape(s)") # debug
-                # print("Sample labels in patch:", clipped['type'].unique()) # debug
-
                 # convert geometries to (geometry, class_id) tuples
                 ## 这里是在对上面得到的clipped处理，clipped是GeoDataFrame
                 shapes = [

@@ -13,7 +13,7 @@ class segformerConfig:
 
         # training parameters
         self.batch_size = 4
-        self.num_epoch = 200
+        self.num_epoch = 20
         self.learning_rate = 5e-5
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

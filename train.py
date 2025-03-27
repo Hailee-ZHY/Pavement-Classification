@@ -22,7 +22,7 @@ class SegformerTrainer:
         # load label2id and class count
         with open(self.cfg.label_map_path, "r") as f:
             self.label2id = json.load(f)
-        self.num_classes = len(self.label2id)
+        self.num_classes = max(self.label2id.values())+1
 
         # initialize dataset and dataloaders 
         self.train_dataset = RoadMarkingDataset(self.cfg.image_dir, self.cfg.mask_dir, transform = True, split_file=self.cfg.split_file)
@@ -59,12 +59,28 @@ class SegformerTrainer:
             masks = masks.to(self.device)
 
             outputs = self.model(pixel_values = images)
-            logits = outputs.logits #[B,C,H,W]
+            logits = outputs.logits #[B,num_class,H,W] 
+            # resize logits to match with masks
+            logits = torch.nn.functional.interpolate(
+                logits, size = masks.shape[-2:], mode = "bilinear", align_corners=False
+            )
+
+            # print(f"[DEBUG] logits shape: {logits.shape}")
+            # print(f"[DEBUG] masks shape: {masks.shape}, dtype: {masks.dtype}")
+            # print(f"[DEBUG] masks unique: {masks.unique()}")
+            # print(f"[DEBUG] masks min: {masks.min().item()}, max: {masks.max().item()}, num_classes: {self.num_classes}")
+
 
             loss = self.criterion(logits, masks)
             self.optimizer.zero_grad()
+
+            # # debug
+            # if not torch.isfinite(loss):
+            #     print(f"[ERROR] non-finite loss: {loss}")
+            #     continue
+
             loss.backward()
-            self.optimize.step()
+            self.optimizer.step()
 
             total_loss += loss.item()
         
