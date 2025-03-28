@@ -13,6 +13,7 @@ import os
 
 from DatasetProcessor import RoadMarkingDataset
 from config import segformerConfig
+from utils import analyze_class_distribution, compute_class_weights
 
 class SegformerTrainer:
     def __init__(self, config):
@@ -39,7 +40,9 @@ class SegformerTrainer:
         ).to(self.device)
 
         # loss and optimizer 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.counter = analyze_class_distribution(self.train_loader)
+        self.class_weights= compute_class_weights(self.counter, self.num_classes)
+        self.criterion = torch.nn.CrossEntropyLoss(weight = self.class_weights.to(self.device))
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.cfg.learning_rate)
 
         # for valuation part
@@ -134,6 +137,14 @@ class SegformerTrainer:
     
     def run(self):
         print("start training ...")
+
+        print("\n--- Class Distribution & Weights ---")
+        for class_id in sorted(self.counter.keys()):
+            count = self.counter[class_id]
+            weight = self.class_weights[class_id].item()
+            print(f"Class {class_id:2d} | Pixels: {count:>10,} | Weight: {weight:.6f}")
+        print("------------------------------------\n")
+
         for epoch in range(self.cfg.num_epoch):
             self.train_step(epoch)
             val_loss = self.evaluate()
