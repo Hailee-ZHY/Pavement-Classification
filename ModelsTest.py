@@ -40,7 +40,7 @@ class SegformerTester:
         self.model.load_state_dict(torch.load("best_model.pth", map_location=self.device))
         self.model.eval()
     
-    def test_and_visualization(self, num_visualize = 5):
+    def visualization_test_result(self, num_visualize = 5):
         count = 0
         with torch.no_grad():
             for images, masks in tqdm(self.test_loader, desc = "Testing"):
@@ -82,7 +82,7 @@ class SegformerTester:
 if __name__ == "__main__":
     cfg = segformerConfig()
     tester = SegformerTester(cfg)
-    tester.test_and_visualization(num_visualize=5)
+    tester.visualization_test_result(num_visualize=5)
 
 
 
