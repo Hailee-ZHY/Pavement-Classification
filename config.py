@@ -36,4 +36,4 @@ class SwinUnetConfig:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # model name
-        self.model_name = "swin-unet-finetune"
+        self.model_name = "swin-unet-finetune" # 这个记得改一下

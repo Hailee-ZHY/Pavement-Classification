@@ -34,7 +34,7 @@ class RoadMarkingDataset(Dataset):
         return len(self.image_files)
     
     def __getitem__(self, idx):
-        print(f"[debug] Getting sample idx: {idx}")
+        # print(f"[debug] Getting sample idx: {idx}")
 
         img_path = os.path.join(self.image_dir, self.image_files[idx])
         msk_path = os.path.join(self.mask_dir, self.mask_files[idx])
@@ -45,10 +45,10 @@ class RoadMarkingDataset(Dataset):
         # print("image after stack:", type(image), image.shape) # debug
         mask = cv2.imread(msk_path, cv2.IMREAD_GRAYSCALE)
 
-        # debug
-        if image is None or mask is None:
-            print(f"load failed: idx = {idx}, image = {img_path}, mask = {msk_path}")
-            return None
+        # # debug
+        # if image is None or mask is None:
+        #     print(f"load failed: idx = {idx}, image = {img_path}, mask = {msk_path}")
+        #     return None
         
         if image.shape[:2] != mask.shape[:2]:
             print(f"[ERROR] Shape mismatch! image shape: {image.shape}, mask shape: {mask.shape}")
