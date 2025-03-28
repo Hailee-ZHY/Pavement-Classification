@@ -42,6 +42,9 @@ class SegformerTrainer:
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.cfg.learning_rate)
 
+        # for valuation part
+        self.best_val_loss = float('inf') # update with smaller loss until get the smallet one
+
     def train_step(self, epoch):
         self.model.train()
         total_loss = 0 
@@ -49,7 +52,7 @@ class SegformerTrainer:
         # for images, mask in tqdm(self.train_loader, desc = f"Epoch {epoch+1}/{self.cfg.num_epoch}"):
         # debug 
         for batch in tqdm(self.train_loader, desc = f"Epoch {epoch+1}/{self.cfg.num_epoch}"):
-            if batch is None or not isinstance(batch, (list, tuple)) or len(batch) != 2:
+            if batch is None or not isinstance(batch, (list, tuple)) or len(batch) != 2: # 跑完周感觉这里可以改一下，应该也没问题
                 print("Skipped invalid batch.")
                 continue 
             
@@ -87,10 +90,58 @@ class SegformerTrainer:
         avg_loss = total_loss / len(self.train_loader)
         print(f"Epoch {epoch +1} - Training Loss: {avg_loss:.4f}")
 
+    def evaluate(self):
+        self.model.eval()
+        total_loss = 0
+        total_correct = 0
+        total_pixel = 0
+        num_classes = self.num_classes
+        intersection = torch.zeros(num_classes, device = self.device)
+        union = torch.zeros(num_classes, device = self.device)
+
+        with torch.no_grad():
+            for images, masks in self.val_loader:
+                images = images.to(self.device)
+                masks = masks.to(self.device)
+
+                output = self.model(pixel_values = images)
+                logits = output.logits
+                # resize, same as train part
+                logits = torch.nn.functional.interpolate(
+                    logits, size = masks.shape[-2:], mode = "bilinear", align_corners=False
+                    )
+                
+                loss = self.criterion(logits, masks)
+                total_loss += loss.item()
+
+                preds = torch.argmax(logits, dim = 1)
+                total_correct += (preds == masks).sum().item()
+                total_pixel += torch.numel(masks)
+
+                for cls in range(num_classes):
+                    pred_inds = (preds == cls)
+                    target_inds = (masks == cls)
+                    intersection[cls] += (pred_inds & target_inds).sum()
+                    union[cls] += (pred_inds | target_inds).sum()
+
+        avg_loss = total_loss /len(self.val_loader)
+        pixel_acc = total_correct / total_pixel
+        iou = (intersection/(union + 1e-6)).mean().item()
+
+        print(f"Validation Loss: {avg_loss: 4f}, Pixel Acc: {pixel_acc:4f}, mIoU:{iou: 4f}")
+        return avg_loss
+        
+    
     def run(self):
         print("start training ...")
         for epoch in range(self.cfg.num_epoch):
             self.train_step(epoch)
+            val_loss = self.evaluate()
+
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                torch.save(self.model.state_dict(), "best_model.pth")
+        print("End training, new best model weight saving ...")
     
 if __name__ == "__main__":
     cfg = segformerConfig()
