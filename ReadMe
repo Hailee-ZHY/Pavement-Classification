@@ -24,6 +24,7 @@ Validation Loss:  0.011110, Pixel Acc: 0.996752, mIoU: 0.059231
 -- 和传统的object segmentation不一样，这里的mIoU衡量的是：在一张mask上，IoU_c = Intersection(Pc,Gc)/union(Pc,Gc), 然后取所有类别的平均值，得到mIoU
 
 2025/03/28
+-- TODO: 加一个颜色和class的映射关系
 
 """
 type字段的原始信息:
