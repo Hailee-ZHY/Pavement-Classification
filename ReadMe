@@ -19,7 +19,11 @@ split_dataset 这个文件只用运行一次来划分数据, 需要用在DataLoa
 build fintune完了model， 通过val, 获得最佳权重文件:best_model.pth
 使用了20个epoch, 最后结果为： Epoch 20 - Training Loss: 0.0110
 Validation Loss:  0.011110, Pixel Acc: 0.996752, mIoU: 0.059231
--- mIoU偏低，这个先不管，可能是类别不平衡导致的, 或者背景（pixel =0）太多导致的。
+-- mIoU偏低，这个先不管，可能是类别不平衡导致的, 或者背景(pixel =0)太多导致的。
+-- 准确率高，mIoU偏低，从test结果定位是因为背景太多，下一步class_num, 这个函数写在utils里， 调用到train_loader就好了
+-- 和传统的object segmentation不一样，这里的mIoU衡量的是：在一张mask上，IoU_c = Intersection(Pc,Gc)/union(Pc,Gc), 然后取所有类别的平均值，得到mIoU
+
+2025/03/28
 
 """
 type字段的原始信息:
