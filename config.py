@@ -9,6 +9,7 @@ class segformerConfig:
         self.mask_dir = "out_put/masks"
         self.split_file = "splits/train.txt"
         self.val_split_file = "splits/val.txt"
+        self.test_split_file = "splits/test.txt"
         self.label_map_path = "out_put/label_mapping.json"
 
         # training parameters
@@ -20,6 +21,7 @@ class segformerConfig:
         # model name
         self.model_name = "nvidia/segformer-b0-finetuned-ade-512-512"
 
+"""
 class SwinUnetConfig:
     def __init__(self):
         # data path
@@ -36,4 +38,5 @@ class SwinUnetConfig:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # model name
-        self.model_name = "swin-unet-finetune" # 这个记得改一下
+        self.model_name = "swin-unet-finetune" # 这个记得改一下"
+"""

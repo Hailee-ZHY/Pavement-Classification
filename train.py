@@ -141,7 +141,7 @@ class SegformerTrainer:
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
                 torch.save(self.model.state_dict(), "best_model.pth")
-        print("End training, new best model weight saving ...")
+        print("End training, new best model weight saved!")
     
 if __name__ == "__main__":
     cfg = segformerConfig()
