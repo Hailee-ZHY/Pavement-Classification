@@ -24,7 +24,14 @@ Validation Loss:  0.011110, Pixel Acc: 0.996752, mIoU: 0.059231
 -- 和传统的object segmentation不一样，这里的mIoU衡量的是：在一张mask上，IoU_c = Intersection(Pc,Gc)/union(Pc,Gc), 然后取所有类别的平均值，得到mIoU
 
 2025/03/28
--- TODO: 加一个颜色和class的映射关系
+加了颜色和class的映射关系
+加了wandb
+增加epoch到100看下结果
+
+2025/03/29
+combine instance
+按照instance分patch，准备数据送入ViT，但是实际上可能存在的难点：比如solid line, 特别长，怎么办？ -- 折中的解决策略是将长实例滑动窗口分割
+还有一个问题，是在Seg中处理数据的时候跳过了尺寸不足的patch
 
 """
 type字段的原始信息:
@@ -37,54 +44,5 @@ type字段的原始信息:
  处理方式：
 1. 全部统一为小写
 2. 去掉None值
-3. 
-
-ss: single solid 
-rrx: 
-sl: stop line
-arrow 
-cw: cross work 
-rod: 
-do not stop
-sb: single broken
-hov 
-lane 
-bus
-ds: double solid 
-bike
-hash 
-bump 
-bs 
-arow
-s
-ump 
-ssy 
-p 
-ar 
-bumpp
-dsb 
-wheelchair 
-pedesterian 
-bike lane 
-cross 
-hahs 
-yy
-bikew 
-do nots stop 
-r 
-bmp
-bus only 
-hike 
-slow 
-bikwe 
-bikw
-biike 
-sr 
-l 
-cw
-ssl 
-hashy 
-csl 
-stop line 
-solid
+3. 映射关系，加上为0的背景，一共15类
 """
