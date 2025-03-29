@@ -103,8 +103,8 @@ class SegmentationPreprocessor:
         ## 首先对type数据进行预处理，处理逻辑写在README了
 
         label_clean_map = {
-            "arow": "arrow",
-            "biike": "bike", "bikew": "bike", "bikwe": "bike", "bikw": "bike",
+            "arow": "arrow", "ar":"arrow",
+            "biike": "bike", "bikew": "bike", "bikwe": "bike", "bikw": "bike", "bike lane": "bike",
             "bus only": "bus",
             "bmp": "bump", "bumpp": "bump",
             "cw": "crosswalk", "cw'": "crosswalk", "cross": "crosswalk",
@@ -116,7 +116,9 @@ class SegmentationPreprocessor:
             "sb": "single_broken",
             "ss": "single_solid", "ssl": "single_solid", "ssy": "single_solid", "solid": "ssingle_solid",
             "sl": "stopline", "stop line": "stopline", 
+            "p": "parking"
         }
+        # missing: rod, hov
 
         raw_labels = self.shp_data["type"].dropna().astype(str).str.lower()
         clean_labels = raw_labels.apply(lambda x: label_clean_map.get(x,x)) #.get(x,x)在字典中寻找x对应的value，如果有的话就返回对应value, 如果没有的话就返回x自身
@@ -165,7 +167,7 @@ class SegmentationPreprocessor:
 
                 # 如果的image的size 不是512*512的话，跳过，因为在test中检查了，只有 三张是不符合的
                 if patch.shape[0] != self.patch_size or patch.shape[1] != self.patch_size:
-                    print(f"Skipping patch {count:04d} due to image size: {patch.shape}")
+                    # print(f"Skipping patch {count:04d} due to image size: {patch.shape}") # debug
                     continue
 
                 # calculate geospatial bounds of this patch
