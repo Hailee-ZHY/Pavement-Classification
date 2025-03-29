@@ -12,6 +12,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+from utils import generate_class_colors, decode_segmap, plot_class_legend
 
 class SegformerTester:
     def __init__(self, config):
@@ -42,6 +43,12 @@ class SegformerTester:
     
     def visualization_test_result(self, num_visualize = 5):
         count = 0
+        class_colors = generate_class_colors(num_classes=self.num_classes)
+
+        with open(self.cfg.label_map_path, "r") as f:
+            label_map = json.load(f)
+        plot_class_legend(class_colors, label_map, save = True)
+
         with torch.no_grad():
             for images, masks in tqdm(self.test_loader, desc = "Testing"):
                 images = images.to(self.device)
@@ -63,14 +70,20 @@ class SegformerTester:
                         image_np = (image_np * 255).astype(np.uint8)
                     mask_np = masks[0].cpu().numpy()
                     pred_np = preds[0].cpu().numpy()
-                    print(f"[debug] Prediction unique values: {np.unique(pred_np)}")
+                    # print(f"[debug] Prediction unique values: {np.unique(pred_np)}")
+
+                    # decode and remap 
+                    mask_rgb = decode_segmap(mask_np, class_colors)
+                    pred_rgb = decode_segmap(pred_np, class_colors)
 
                     fig, axes = plt.subplots(1,3,figsize = (15,5))
                     axes[0].imshow(image_np.astype(np.uint8))
                     axes[0].set_title("Image")
-                    axes[1].imshow(mask_np, cmap = "nipy_spectral")  # cmap = 指定colormap
+                    # axes[1].imshow(mask_np, cmap = "nipy_spectral")  # cmap = 指定colormap
+                    axes[1].imshow(mask_rgb)
                     axes[1].set_title("Ground Truth")
-                    axes[2].imshow(pred_np, cmap = "nipy_spectral")
+                    # axes[2].imshow(pred_np, cmap = "nipy_spectral")
+                    axes[2].imshow(pred_rgb)
                     axes[2].set_title("Prediction")
                     for ax in axes:
                         ax.axis("off")

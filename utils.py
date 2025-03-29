@@ -5,6 +5,9 @@ import random
 from collections import Counter
 from tqdm import tqdm
 import torch
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
 
 def load_split_file(split_file):
     with open(split_file, "r") as f:
@@ -41,6 +44,54 @@ def compute_class_weights(counter, num_classes):
     weights = weights / weights.sum()  # normalize to sum to 1 (optional)
     print("\nClass Weights:", weights.numpy())
     return weights #torch.Tensor: A tensor of class weights for use in loss functions.
+
+# generate color and label pairs
+def generate_class_colors(num_classes, colormap_name="tab20"): # nipy_spectral
+    cmap = plt.get_cmap(colormap_name, num_classes) 
+
+    class_color = {0:(0,0,0)} # background is black, stay unchanged
+    for i in range(1, num_classes):
+        rgb = tuple(int(c*255) for c in cmap(i)[:3]) # 返回cmap对象的第i个颜色，理论上数据格式是(R,G,B,透明度)
+        class_color[i] = rgb
+
+    return class_color
+
+# decode pairs
+def decode_segmap(mask, class_colors):
+    """
+    mask: 模型预测的H*W二维图像
+    将label图转化为彩色图像
+    """
+    h,w = mask.shape
+    color_mask = np.zeros((h,w,3), dtype = np.uint8)
+    for class_id, color in class_colors.items():
+        color_mask[mask == class_id] = color
+    return color_mask
+
+def plot_class_legend(class_colors, label_map, save = True):
+    """
+    generate legend for visualizing color and corresponding labels
+    """
+    id2label = {v:k for k, v in label_map.items()}
+
+    handles = []
+    for class_id, color in sorted(class_colors.items()):
+        if class_id == 0:
+            continue # skipped black background
+        label = f"{class_id}: {id2label.get(class_id, 'Unknown')}"
+        patch = mpatches.Patch(color = np.array(color)/255.0, label = label)
+        handles.append(patch)
+
+    plt.figure(figsize = (12,1))
+    plt.axis("off")
+    legend = plt.legend(handles = handles, loc = "center", ncol = 4, frameon = False)
+    plt.tight_layout()
+
+    if save:
+        plt.savefig("label_color_pairs", dpi = 300, bbox_inches = "tight", pad_inches = 0.2)
+        print("Legend saved.")
+    else:
+        plt.show()
 
 class SplitHelper:
     @staticmethod
