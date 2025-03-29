@@ -10,6 +10,7 @@ from transformers import SegformerForSemanticSegmentation
 from tqdm import tqdm 
 import json
 import os
+import wandb
 
 from DatasetProcessor import RoadMarkingDataset
 from config import segformerConfig
@@ -92,6 +93,7 @@ class SegformerTrainer:
         
         avg_loss = total_loss / len(self.train_loader)
         print(f"Epoch {epoch +1} - Training Loss: {avg_loss:.4f}")
+        wandb.log({"epoch": epoch + 1, "train_loss": avg_loss})
 
     def evaluate(self):
         self.model.eval()
@@ -132,7 +134,7 @@ class SegformerTrainer:
         iou = (intersection/(union + 1e-6)).mean().item()
 
         print(f"Validation Loss: {avg_loss: 4f}, Pixel Acc: {pixel_acc:4f}, mIoU:{iou: 4f}")
-        return avg_loss
+        return avg_loss, pixel_acc, iou
         
     
     def run(self):
@@ -147,15 +149,31 @@ class SegformerTrainer:
 
         for epoch in range(self.cfg.num_epoch):
             self.train_step(epoch)
-            val_loss = self.evaluate()
+            val_loss, val_acc, val_iou = self.evaluate()
+            wandb.log({
+                "epoch": epoch + 1,
+                "val_loss": val_loss,
+                "val_pixel_acc": val_acc,
+                "val_mIoU": val_iou,
+            })
 
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
                 torch.save(self.model.state_dict(), "best_model.pth")
         print("End training, new best model weight saved!")
+        wandb.finish()
     
 if __name__ == "__main__":
     cfg = segformerConfig()
+
+    # wandb 
+    wandb.init(
+        project="road-marking-classification",
+        name="SegFormer_Training",
+        config=cfg.__dict__
+        )
+    
+    # train
     trainer = SegformerTrainer(cfg)
     trainer.run()
 

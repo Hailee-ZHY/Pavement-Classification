@@ -8,6 +8,7 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+import wandb
 
 def load_split_file(split_file):
     with open(split_file, "r") as f:
@@ -27,7 +28,8 @@ def analyze_class_distribution(dataloader):
     print("\nClass Distribution:")
     for class_id, count in sorted(counter.items()):
         print(f"Class {class_id}: {count:,} pixels")
-
+    
+    wandb.log({"class_pixel_counts": dict(counter)})
     return counter # A dictionary-like object mapping class indices to pixel counts.
 
 def compute_class_weights(counter, num_classes):
@@ -43,6 +45,7 @@ def compute_class_weights(counter, num_classes):
     weights = torch.tensor(weights, dtype=torch.float)
     weights = weights / weights.sum()  # normalize to sum to 1 (optional)
     print("\nClass Weights:", weights.numpy())
+    wandb.log({"class_weights": {f"class_{i}": w.item() for i, w in enumerate(weights)}})
     return weights #torch.Tensor: A tensor of class weights for use in loss functions.
 
 # generate color and label pairs
