@@ -33,6 +33,11 @@ combine instance
 按照instance分patch，准备数据送入ViT，但是实际上可能存在的难点：比如solid line, 特别长，怎么办？ -- 折中的解决策略是将长实例滑动窗口分割
 还有一个问题，是在Seg中处理数据的时候跳过了尺寸不足的patch
 
+2025/03/30
+尝试一下不同的segformer的backbone看会不会好一点？
+想了一下，ViT可能不是很合适？比如线很细的时候，给的gt也不是bounding box呀
+mIoU在除了背景类外特别低的原因是seg的计算方式导致的 = intersection / union, 在这个数据里面，gt是一条细线，pre更宽一点
+
 """
 type字段的原始信息:
 ['ss' 'rrx' 'sl' 'arrow' 'cw' 'rod' 'do not stop' 'sb' 'hov' 'lane' 'bus'

@@ -7,3 +7,4 @@ wandb/
 # Ignore data files
 EDA.py
 test.py
+minenotes   
