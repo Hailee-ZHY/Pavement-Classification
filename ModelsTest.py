@@ -12,10 +12,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import argparse
 from utils import generate_class_colors, decode_segmap, plot_class_legend
 
 class SegformerTester:
-    def __init__(self, config):
+    def __init__(self, config, model_path):
         self.cfg = config
         self.device = config.device
 
@@ -38,7 +39,7 @@ class SegformerTester:
         ).to(self.device)
 
         # load best weight
-        self.model.load_state_dict(torch.load("best_model.pth", map_location=self.device))
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
     
     def visualization_test_result(self, num_visualize = 5):
@@ -93,8 +94,13 @@ class SegformerTester:
                 count += 1
 
 if __name__ == "__main__":
+
+    parse = argparse.ArgumentParser()
+    parse.add_argument("--model_path", type = str, default = "best_model.pth")
+    args = parse.parse_args()
+
     cfg = segformerConfig()
-    tester = SegformerTester(cfg)
+    tester = SegformerTester(cfg, args.model_path)
     tester.visualization_test_result(num_visualize=5)
 
 

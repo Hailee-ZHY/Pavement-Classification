@@ -19,7 +19,9 @@ class segformerConfig:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # model name
-        self.model_name = "nvidia/segformer-b0-finetuned-ade-512-512"
+        self.model_name = "nvidia/segformer-b2-finetuned-ade-512-512"
+        # b0: nvidia/segformer-b0-finetuned-ade-512-512
+        # b2: nvidia/segformer-b2-finetuned-ade-512-512
 
 """
 class SwinUnetConfig:

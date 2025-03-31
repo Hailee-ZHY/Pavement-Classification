@@ -15,7 +15,7 @@ from datetime import datetime
 
 from DatasetProcessor import RoadMarkingDataset
 from config import segformerConfig
-from utils import analyze_class_distribution, compute_class_weights, DiceLoss
+from utils import analyze_class_distribution, compute_class_weights, DiceLoss, ComboLoss
 
 class SegformerTrainer:
     def __init__(self, config):
@@ -45,7 +45,13 @@ class SegformerTrainer:
         self.counter = analyze_class_distribution(self.train_loader)
         self.class_weights= compute_class_weights(self.counter, self.num_classes)
         # self.criterion = torch.nn.CrossEntropyLoss(weight = self.class_weights.to(self.device))
-        self.criterion = DiceLoss()
+        # self.criterion = DiceLoss()
+        self.criterion = ComboLoss(
+            weight_ce = 0.2, 
+            weight_dice = 0.8, 
+            class_weights=self.class_weights.to(self.device)
+        )
+        
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.cfg.learning_rate)
 
         # for valuation part

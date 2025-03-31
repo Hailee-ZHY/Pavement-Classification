@@ -132,3 +132,17 @@ class DiceLoss(torch.nn.Module):
         dice = (2.*intersection+self.smooth)/(union + self.smooth)
         loss = 1 - dice
         return loss.mean()
+
+class ComboLoss(torch.nn.Module):
+    def __init__(self, weight_ce=0.2, weight_dice=0.8, class_weights=None, smooth=1e-6):
+        super().__init__()
+        self.ce = torch.nn.CrossEntropyLoss(weight=class_weights)
+        self.dice = DiceLoss(smooth=smooth)
+        self.w_ce = weight_ce
+        self.w_dice = weight_dice
+
+    def forward(self, logits, targets):
+        ce_loss = self.ce(logits, targets)
+        dice_loss = self.dice(logits, targets)
+        return self.w_ce * ce_loss + self.w_dice * dice_loss
+
