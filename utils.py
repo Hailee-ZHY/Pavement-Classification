@@ -114,3 +114,21 @@ class SplitHelper:
                 print(f"skipped missing image: {image_path}")
         return image_files, mask_files
 
+class DiceLoss(torch.nn.Module):
+    def __init__(self, smooth = 1e-6):
+        super(DiceLoss, self).__init__()
+        self.smooth = smooth
+    
+    def forward(self, logits, targets):
+        # logits: [B,C,H,W]
+        # targets: [B,H,W]
+        num_classes = logits.shape[1]
+        probs = torch.softmax(logits, dim=1)
+        targets_one_hot = torch.nn.functional.one_hot(targets, num_classes=num_classes).permute(0,3,1,2).float()
+        
+        intersection = (probs * targets_one_hot).sum(dim = (0,2,3))
+        union = probs.sum(dim = (0,2,3)) + targets_one_hot.sum(dim = (0,2,3))
+
+        dice = (2.*intersection+self.smooth)/(union + self.smooth)
+        loss = 1 - dice
+        return loss.mean()
