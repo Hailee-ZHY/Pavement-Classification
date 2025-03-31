@@ -11,10 +11,11 @@ from tqdm import tqdm
 import json
 import os
 import wandb
+from datetime import datetime
 
 from DatasetProcessor import RoadMarkingDataset
 from config import segformerConfig
-from utils import analyze_class_distribution, compute_class_weights
+from utils import analyze_class_distribution, compute_class_weights, DiceLoss
 
 class SegformerTrainer:
     def __init__(self, config):
@@ -43,7 +44,8 @@ class SegformerTrainer:
         # loss and optimizer 
         self.counter = analyze_class_distribution(self.train_loader)
         self.class_weights= compute_class_weights(self.counter, self.num_classes)
-        self.criterion = torch.nn.CrossEntropyLoss(weight = self.class_weights.to(self.device))
+        # self.criterion = torch.nn.CrossEntropyLoss(weight = self.class_weights.to(self.device))
+        self.criterion = DiceLoss()
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.cfg.learning_rate)
 
         # for valuation part
@@ -134,12 +136,23 @@ class SegformerTrainer:
         iou = (intersection/(union + 1e-6)).mean().item()
 
         print(f"Validation Loss: {avg_loss: 4f}, Pixel Acc: {pixel_acc:4f}, mIoU:{iou: 4f}")
+        
+        print("\nPer-Class IoU:")
+        per_class_iou ={}
+        for cls in range(num_classes):
+            iou_cls = (intersection[cls]/(union[cls] + 1e-6)).item()
+            per_class_iou[f"class_{cls}"] = iou_cls
+            print(f"Class {cls:2d} IoU: {iou_cls:.4f}")
+
+        wandb.log({f"IoU/class_{cls}": iou for cls, iou in per_class_iou.items()})
+
         return avg_loss, pixel_acc, iou
         
     
     def run(self):
         print("start training ...")
 
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
         print("\n--- Class Distribution & Weights ---")
         for class_id in sorted(self.counter.keys()):
             count = self.counter[class_id]
@@ -159,7 +172,7 @@ class SegformerTrainer:
 
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
-                torch.save(self.model.state_dict(), "best_model.pth")
+                torch.save(self.model.state_dict(), f"best_model_{timestamp}.pth")
         print("End training, new best model weight saved!")
         wandb.finish()
     
