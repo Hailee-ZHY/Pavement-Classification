@@ -1,5 +1,4 @@
 # Ignore dataset folder
-dataset/
 out_put/
 splits/
 wandb/
