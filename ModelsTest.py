@@ -41,6 +41,7 @@ class SegformerTester:
         # load best weight
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
+        self.save_dir = "out_put"
     
     def visualization_test_result(self, num_visualize = 5):
         count = 0
@@ -88,8 +89,11 @@ class SegformerTester:
                     axes[2].set_title("Prediction")
                     for ax in axes:
                         ax.axis("off")
-                    plt.tight_layout
-                    plt.show()
+                    plt.tight_layout()
+                    save_path = os.path.join(self.save_dir, "test_results")
+                    os.makedirs(save_path, exist_ok=True)
+                    plt.savefig(os.path.join(save_path, f"{count}.png"))
+                    plt.close()
                 
                 count += 1
 
@@ -101,7 +105,7 @@ if __name__ == "__main__":
 
     cfg = segformerConfig()
     tester = SegformerTester(cfg, args.model_path)
-    tester.visualization_test_result(num_visualize=5)
+    tester.visualization_test_result(num_visualize=20)
 
 
 

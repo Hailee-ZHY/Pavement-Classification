@@ -132,9 +132,16 @@ class SegmentationPreprocessor:
         
         unique_labels = sorted(set(label for label in clean_labels if label is not None))
         label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label有none要预处理, 为了满足corssentropy, label从0开始
-
+        
         with open(self.label_map_path, "w") as f:
             json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
+        
+        # 为了统计频数，增加的内容
+        label2freq = {label: int(label_count[label]) for label in unique_labels}
+        label_freq_path = os.path.join(self.save_dir, "label_frequency.json")
+        with open(label_freq_path, "w") as f:
+            json.dump(label2freq, f, indent=4)
+            
         return label2id
 
     def _rasterize_mask(self, shapes, out_shape, transform):
