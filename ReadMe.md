@@ -23,7 +23,7 @@ This project focuses on pixel-level segmentation and classification of road mark
 ## Result
 ![alt text](image-1.png)
 
-**8Our fine-tuned model (Prediction 3) shows progressive improvement through training strategies**:
+**Our fine-tuned model (Prediction 3) shows progressive improvement through training strategies**:
 - Prediction (1): road markings largely missed.
 - Prediction (2): better class recognition, but poor edge precision.
 - Prediction (3): detailed and accurate predictions resembling the ground truth.
