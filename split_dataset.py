@@ -2,7 +2,7 @@ import os
 import random 
 
 def split_dataset(image_dir, out_put_dir = "splits", train_ratio = 0.7, val_ratio = 0.2, test_ratio=0.1, seed = 42):
-    """这个函数只需要运行一次来生成划分文件"""
+    """This function ONLY needs to be run ONCE to split the dataset required for model training"""
     os.makedirs(out_put_dir, exist_ok = True)
 
     image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
