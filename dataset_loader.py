@@ -29,7 +29,7 @@ class DataLoader():
         self.tiff_path = tiff_path
         self.shp_path = shp_path
 
-        self.read_data() # 为了后面能直接用self.shp_data变量，而不用外部调用
+        self.read_data() # To enable direct use of the self.shp_data variable later without needing external calls.
 
     def read_data(self):
         self.tiff_data, self.tiff_profile, self.tiff_crs = self._load_tiff()
@@ -40,13 +40,13 @@ class DataLoader():
     
     def _load_tiff(self):
         with rasterio.open(self.tiff_path) as src: 
-            tiff_data = src.read(1) # 读第一波段的数据, 提供的数据只有一个波段，就是高程数据
+            tiff_data = src.read(1) # Read the first band of data. The provided data contains only one band, which is elevation data.
             tiff_profile = src.profile
             tiff_crs = src.crs
         return tiff_data, tiff_profile, tiff_crs
 
     def _load_shp(self):
-        shp_data = gpd.read_file(self.shp_path) # GeoDataFrame,有geopandas的属性
+        shp_data = gpd.read_file(self.shp_path) # GeoDataFrame,with geopandas's attribution
         shp_crs = shp_data.crs
         return shp_data, shp_crs
 
@@ -58,7 +58,7 @@ class DataLoader():
         with rasterio.open(self.tiff_path) as src:
             width, height = src.width, src.height
         
-        # 从中心点剪裁一个区域画图
+        # Crop a region from the center point for visualization.
             center_x, center_y = width//2, height//2
             x_min, x_max = center_x - window_size//2, center_x + window_size//2
             y_min, y_max = center_y - window_size//2, center_y + window_size//2
@@ -71,10 +71,10 @@ class DataLoader():
         clipped_shp = self.shp_data[self.shp_data.intersects(bbox)]
         fig, ax = plt.subplots(figsize = (8,6))
         ax.imshow(small_tiff, cmap = "terrain", extent = (
-            transform.c,  # 左上角 x 坐标（实际地理坐标）
-            transform.c + window_size * transform.a,  # 右下角 x 坐标
-            transform.f + window_size * transform.e,  # 右下角 y 坐标（注意 transform.e 通常是负的）
-            transform.f  # 左上角 y 坐标
+            transform.c,  # Top-left x-coordinate (in real-world geographic coordinates)
+            transform.c + window_size * transform.a,  # Bottom-right x-coordinate
+            transform.f + window_size * transform.e,  # Bottom-right y-coordinate (note that transform.e is usually negative)
+            transform.f  # Top-left y-coordinate
         ))
         clipped_shp.plot(ax=ax, color="red", linewidth=0.5)
         plt.title("region Tiff & Shp check")
@@ -82,7 +82,7 @@ class DataLoader():
 
 class SegmentationPreprocessor:
     def __init__(self, data_loader, patch_size = 512, save_dir = "out_put"):
-        self.tiff_data = data_loader.tiff_data ## tiff_data本身绑定在DataLoader这个类的self上
+        self.tiff_data = data_loader.tiff_data ## tiff_data itself is bound to self within the DataLoader class.
         self.tiff_profile = data_loader.tiff_profile
         self.transform = self.tiff_profile["transform"]   
         self.crs = self.tiff_profile["crs"]
@@ -100,7 +100,7 @@ class SegmentationPreprocessor:
         self.label2id = self._build_label_map()
 
     def _build_label_map(self, freq=5):
-        ## 首先对type数据进行预处理，处理逻辑写在README了
+        ## First, preprocess the type data. The processing logic is documented in the README.
 
         label_clean_map = {
             "arow": "arrow", "ar":"arrow",
@@ -121,9 +121,9 @@ class SegmentationPreprocessor:
         # missing: rod, hov
 
         raw_labels = self.shp_data["type"].dropna().astype(str).str.lower()
-        clean_labels = raw_labels.apply(lambda x: label_clean_map.get(x,x)) #.get(x,x)在字典中寻找x对应的value，如果有的话就返回对应value, 如果没有的话就返回x自身
+        clean_labels = raw_labels.apply(lambda x: label_clean_map.get(x,x)) #.get(x, x) looks up the value corresponding to x in a dictionary. If the key exists, it returns the associated value; if not, it returns x itself.
         
-        # 统计频数，只返回大于设定频数的值
+        # Count the frequency and return only the values with a frequency greater than the specified threshold.
         label_count = clean_labels.value_counts()
         freq_labels = label_count[label_count>=freq].index.tolist()
 
@@ -131,10 +131,10 @@ class SegmentationPreprocessor:
         self.shp_data["type"] = clean_labels
         
         unique_labels = sorted(set(label for label in clean_labels if label is not None))
-        label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label有none要预处理, 为了满足corssentropy, label从0开始
+        label2id = {label: idx+1 for idx, label in enumerate(unique_labels)} ## unique_label contains None values that need to be preprocessed. To satisfy the requirements of CrossEntropy, labels should start from 0.
         
         with open(self.label_map_path, "w") as f:
-            json.dump(label2id, f) # dump：把python对象(e.g. 字典)以json的格式写入文件中
+            json.dump(label2id, f) # dump: Write a Python object (e.g., a dictionary) to a file in JSON format.
         
         # 为了统计频数，增加的内容
         label2freq = {label: int(label_count[label]) for label in unique_labels}
@@ -164,43 +164,43 @@ class SegmentationPreprocessor:
     
     def generate_patches(self):
         height, width = self.tiff_data.shape
-        count = 0 # 用于生成patch编号
+        count = 0 # Used to generate patch IDs
 
         for y in range(0, height, self.patch_size):
             for x in range(0, width, self.patch_size):
 
-                window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # 创建了一个patch size的矩形窗口
-                patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # 从tiff中汲截取一个patch, 和window的范围对应，这个数据会输入模型进行训练
+                window = rasterio.windows.Window(x,y,self.patch_size,self.patch_size) # Create a rectangular window of patch size
+                patch = self.tiff_data[y:y+self.patch_size, x:x+self.patch_size] # Extract a patch from the TIFF image; this corresponds to the window area and will be used for model training
 
-                # 如果的image的size 不是512*512的话，跳过，因为在test中检查了，只有 三张是不符合的
+                # Skip the patch if its size is not 512x512. According to test results, only three images do not meet this size requirement.
                 if patch.shape[0] != self.patch_size or patch.shape[1] != self.patch_size:
                     # print(f"Skipping patch {count:04d} due to image size: {patch.shape}") # debug
                     continue
 
                 # calculate geospatial bounds of this patch
-                patch_transform = rasterio.windows.transform(window, self.transform) # 这里用到了上面定义的矩形窗口，并对这个区域的范围进行了affine变换(像素->地理坐标)
-                patch_bounds = rasterio.windows.bounds(window, self.transform) # 返回的是(x_min, y_min, x_max, y_max)
-                patch_box = box(*patch_bounds) #用来构造一个shapely的矩形polygon区域，用来和shp的集合做交集判断，判断就在下面
+                patch_transform = rasterio.windows.transform(window, self.transform) # Apply affine transformation to convert the window's pixel coordinates to geographic coordinates
+                patch_bounds = rasterio.windows.bounds(window, self.transform) # Returns (x_min, y_min, x_max, y_max)
+                patch_box = box(*patch_bounds) # Construct a Shapely rectangular polygon to check for intersection with the SHP geometries
 
                 # Clip SHP to patch bounds
                 clipped = self.shp_data[self.shp_data.intersects(patch_box)].copy() 
-                if clipped.empty: # 如果这个patch_box中不包含shp文件中标记的road_marking的话，就略过它
+                if clipped.empty: # Skip the patch if no road markings from the SHP file are contained within this patch box
                     continue 
                 # convert geometries to (geometry, class_id) tuples
-                ## 这里是在对上面得到的clipped处理，clipped是GeoDataFrame
+                ## Here we process the 'clipped' GeoDataFrame to extract geometry and class_id
                 shapes = [
                     (geom, self.label2id[row["type"]])
-                    for _, row in clipped.iterrows() # .iterow(): pandas & gpd中常见的按行迭代的方式，得到(index, row)
+                    for _, row in clipped.iterrows() 
                     if row["type"] is not None and row["type"] in self.label2id
-                    for geom in row.geometry.geoms # 取出每个Multi Polygon里的所有polygon
-                    if hasattr(row.geometry, "geoms") # 检查row是否有geom这个属性; 列表推导式中，if在for后面是推导式
+                    for geom in row.geometry.geoms # Extract all polygons from each MultiPolygon
+                    if hasattr(row.geometry, "geoms") # Check if the geometry has 'geoms' attribute; this if comes after for in list comprehension
                 ] if clipped.geometry.iloc[0].geom_type == "MultiPolygon" else [
                     (row.geometry, self.label2id[row["type"]]) 
                     for _, row in clipped.iterrows()
-                    if row["type"] is not None and row["type"] in self.label2id # row是geopandas中的一个series, 属性(type, geometry)
-                ] # 先判断是CLIPPED是不是Multipolygen类型（即一个对象里包含多个polygon，比如几个箭头的组合），如果是的话，就展开每个小polygon
+                    if row["type"] is not None and row["type"] in self.label2id 
+                ] # First check if the clipped geometry is a MultiPolygon (e.g., combined arrows). If so, flatten it to individual polygons.
 
-                mask = self._rasterize_mask(shapes, out_shape=(self.patch_size, self.patch_size), transform=patch_transform) # 输入矢量图，输出二维像素Mask图
+                mask = self._rasterize_mask(shapes, out_shape=(self.patch_size, self.patch_size), transform=patch_transform) # Convert vector shapes to a 2D pixel mask
 
                 # Skip patches without any label
                 if mask.max() == 0:
