@@ -100,7 +100,7 @@ class SegformerTester:
 if __name__ == "__main__":
 
     parse = argparse.ArgumentParser()
-    parse.add_argument("--model_path", type = str, default = "best_model.pth")
+    parse.add_argument("--model_path", type = str, default = "best_model.pth")  #这个权重文件有点问题，最后需要替换一下
     args = parse.parse_args()
 
     cfg = segformerConfig()

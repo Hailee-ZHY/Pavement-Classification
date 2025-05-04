@@ -55,3 +55,6 @@ This project focuses on pixel-level segmentation and classification of road mark
 
  **Configuration**  
    You can modify paths and hyperparameters in `config.py` as needed.
+
+# Add draft
+dataset is provided by Tetra Tech
