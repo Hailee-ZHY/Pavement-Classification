@@ -178,7 +178,8 @@ class SegformerTrainer:
 
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
-                torch.save(self.model.state_dict(), f"best_model_{timestamp}.pth")
+                # torch.save(self.model.state_dict(), f"best_model_{timestamp}.pth")
+                torch.save(self.model.state_dict(), f"best_model.pth")
         print("End training, new best model weight saved!")
         wandb.finish()
     
