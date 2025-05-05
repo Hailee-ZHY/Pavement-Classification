@@ -1,6 +1,8 @@
 # Road Marking Classification
 
-This project focuses on pixel-level segmentation and classification of road markings using deep learning models such as **SegFormer** for semantic segmentation and classification. The dataset is derived from high-resolution TIFF images and corresponding SHP labels.
+This project is part of the larger initiative titled **Segment and Classify Road Paint Lines/Markings from LiDAR Raster Images**.  
+My contribution focuses on the **pixel-level segmentation and classification** of road markings using deep learning models, specifically **SegFormer** for semantic segmentation tasks.  
+The dataset, consisting of high-resolution TIFF images and corresponding SHP labels, is provided by Tetra Tech, who also proposed the project.
 
 ## Models Used
 
@@ -32,15 +34,19 @@ This project focuses on pixel-level segmentation and classification of road mark
 | File/Folder           | Description                                                |
 |------------------------|------------------------------------------------------------|
 | `config.py`            | Configuration file containing hyperparameters and paths.   |
-| `DataLoader.py`        | Custom dataset loader module.                              |
-| `DatasetProcessor.py`  | Preprocessing tools for dataset management and preparation. |
+| `dataset_loader.py`        | Custom dataset loader module.                              |
 | `split_dataset.py`     | Script for splitting the dataset into training/validation sets. |
+| `data_preprocessor.py`  | Preprocessing tools for dataset management and preparation. |
+| `train.py`             | Model training script.                                     |
+| `inference.py`        | Model evaluation and testing script.                      |
 | `utils.py`             | Utility functions (metrics calculation, visualization, etc.). |
 | `requirements.txt`     | Python packages required to run the project.               |
-| `train.py`             | Model training script.                                     |
-| `ModelsTest.py`        | Model evaluation and testing script.                      |
+| `run.sh`     | Shell script to execute training and inference.               |
 
 ## How to Run
+**Install the required packages**
+   `pip install -r requirements.txt`
+
 **Split the dataset**  
    Run the dataset splitting script to create training and validation sets:
    `python split_dataset.py`
