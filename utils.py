@@ -54,7 +54,7 @@ def generate_class_colors(num_classes, colormap_name="tab20"): # nipy_spectral
 
     class_color = {0:(0,0,0)} # background is black, stay unchanged
     for i in range(1, num_classes):
-        rgb = tuple(int(c*255) for c in cmap(i)[:3]) # 返回cmap对象的第i个颜色，理论上数据格式是(R,G,B,透明度)
+        rgb = tuple(int(c*255) for c in cmap(i)[:3]) # Return the i-th color from the colormap object; the data is theoretically in the format (R, G, B, alpha)
         class_color[i] = rgb
 
     return class_color
@@ -62,8 +62,8 @@ def generate_class_colors(num_classes, colormap_name="tab20"): # nipy_spectral
 # decode pairs
 def decode_segmap(mask, class_colors):
     """
-    mask: 模型预测的H*W二维图像
-    将label图转化为彩色图像
+    mask: the H×W 2D image predicted by the model
+    Convert the label image to a color image.
     """
     h,w = mask.shape
     color_mask = np.zeros((h,w,3), dtype = np.uint8)
@@ -98,7 +98,7 @@ def plot_class_legend(class_colors, label_map, save = True):
 
 class SplitHelper:
     @staticmethod
-    # 这个方法用于帮助我们将指定train/val文件中的image和mask pair起来，给RoadMarkingDataset读取
+    # This method helps pair images and masks from the specified train/val files for loading with RoadMarkingDataset.
     def get_split_indices(image_dir, split_file):
         """given a split file, return valid image and mask filenames"""
         split_name = load_split_file(split_file)

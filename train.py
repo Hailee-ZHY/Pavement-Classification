@@ -1,7 +1,6 @@
 """
 segmentation -> instance extraction -> classification
-Segmentation Models: SegFormer | Swin-Unet | DeepLabV3/DeepLabV3++
-Classification Models: ViT
+Segmentation Models: SegFormer 
 """
 
 import torch 
@@ -13,7 +12,7 @@ import os
 import wandb
 from datetime import datetime
 
-from DatasetProcessor import RoadMarkingDataset
+from data_preprocessor import RoadMarkingDataset
 from config import segformerConfig
 from utils import analyze_class_distribution, compute_class_weights, DiceLoss, ComboLoss
 
@@ -65,7 +64,7 @@ class SegformerTrainer:
         # for images, mask in tqdm(self.train_loader, desc = f"Epoch {epoch+1}/{self.cfg.num_epoch}"):
         # debug 
         for batch in tqdm(self.train_loader, desc = f"Epoch {epoch+1}/{self.cfg.num_epoch}"):
-            if batch is None or not isinstance(batch, (list, tuple)) or len(batch) != 2: # 跑完周感觉这里可以改一下，应该也没问题
+            if batch is None or not isinstance(batch, (list, tuple)) or len(batch) != 2:
                 print("Skipped invalid batch.")
                 continue 
             

@@ -8,7 +8,7 @@ This project focuses on pixel-level segmentation and classification of road mark
 
 ## Fine-tune Process 
 
-![alter text](image.png)
+![alter text](assets/image.png)
 - **Input**: Segmented Pavement Image
 - **Output**: Pixel-level probability
 
@@ -21,7 +21,7 @@ This project focuses on pixel-level segmentation and classification of road mark
 
 
 ## Result
-![alt text](image-1.png)
+![alt text](assets/image-1.png)
 
 **Our fine-tuned model (Prediction 3) shows progressive improvement through training strategies**:
 - Prediction (1): road markings largely missed.

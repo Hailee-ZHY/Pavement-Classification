@@ -34,15 +34,15 @@ class RoadMarkingDataset(Dataset):
         return len(self.image_files)
     
     def __getitem__(self, idx):
-        # print(f"[debug] Getting sample idx: {idx}")
+        # [Debug]print(f"[debug] Getting sample idx: {idx}")
 
         img_path = os.path.join(self.image_dir, self.image_files[idx])
         msk_path = os.path.join(self.mask_dir, self.mask_files[idx])
 
         image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE) # shape: (H,W)
-        # print("image after read:", type(image), image.shape) # debug
-        image = np.stack([image]*3, axis = -1) # convert to 3 channels: (H,W,3)? 这种处理是否合理？
-        # print("image after stack:", type(image), image.shape) # debug
+        # [Debug]print("image after read:", type(image), image.shape) # debug
+        image = np.stack([image]*3, axis = -1) # convert to 3 channels: (H,W,3)? Is it reasonable?
+        # [Debug]print("image after stack:", type(image), image.shape) # debug
         mask = cv2.imread(msk_path, cv2.IMREAD_GRAYSCALE)
 
         # # debug
@@ -54,7 +54,7 @@ class RoadMarkingDataset(Dataset):
             print(f"[ERROR] Shape mismatch! image shape: {image.shape}, mask shape: {mask.shape}")
             return None  # 跳过不合法样本
 
-        # 如果传入了的augmentation的transform就用，否则就直接将原始数据转化为的tensor
+        # If an augmentation transform is provided, use it; otherwise, directly convert the original data to a tensor.
         if self.transform:
             augmented = self.transform(image=image, mask = mask)
             image = augmented["image"]
@@ -63,5 +63,5 @@ class RoadMarkingDataset(Dataset):
             image = A.ToFloat()(image=image)["image"] # to float 32
             # print("image before ToFloat:", type(image), image.shape) # debug
             image = torch.from_numpy(image).permute(2, 0, 1).float()  # [H,W,C] → [C,H,W]
-            mask = torch.from_numpy(mask).long() # 把tensor的dtype转为long, which is int64
+            mask = torch.from_numpy(mask).long() # Convert the tensor's dtype to long, which is int64.
         return image, mask

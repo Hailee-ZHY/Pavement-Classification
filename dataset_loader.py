@@ -202,7 +202,7 @@ class SegmentationPreprocessor:
 
                 mask = self._rasterize_mask(shapes, out_shape=(self.patch_size, self.patch_size), transform=patch_transform) # Convert vector shapes to a 2D pixel mask
 
-                # Skip patches without any label
+                # Skip patches without y label
                 if mask.max() == 0:
                     continue 
 
