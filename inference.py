@@ -2,7 +2,7 @@
 # current models: SegTranformer
 
 from config import segformerConfig
-from DatasetProcessor import RoadMarkingDataset
+from data_preprocessor import RoadMarkingDataset
 import json
 from torch.utils.data import DataLoader
 from transformers import SegformerForSemanticSegmentation
@@ -38,7 +38,7 @@ class SegformerTester:
             ignore_mismatched_sizes=True,
         ).to(self.device)
 
-        # load best weight
+        # load the best weight
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
         self.save_dir = "out_put"
@@ -63,12 +63,12 @@ class SegformerTester:
                     logits, size = masks.shape[-2:], mode = "bilinear", align_corners=False
                     )
                 
-                preds = torch.argmax(logits, dim = 1) # [B,C,H,W], 选择概率最大对应的Class
+                preds = torch.argmax(logits, dim = 1) # [B,C,H,W], select the class with the highest probability.
 
                 # Visualization 
                 if count < num_visualize:
-                    image_np = images[0].permute(1,2,0).cpu().numpy() # 提取都是当前batch的第一张图，而且batch_size设置的为1
-                    if image_np.max() <= 1.0: # 说明是经过ToTensor归一化了
+                    image_np = images[0].permute(1,2,0).cpu().numpy() # Always take the first image in the current batch
+                    if image_np.max() <= 1.0: # This indicates that normalization has been applied through ToTensor.
                         image_np = (image_np * 255).astype(np.uint8)
                     mask_np = masks[0].cpu().numpy()
                     pred_np = preds[0].cpu().numpy()
@@ -81,7 +81,7 @@ class SegformerTester:
                     fig, axes = plt.subplots(1,3,figsize = (15,5))
                     axes[0].imshow(image_np.astype(np.uint8))
                     axes[0].set_title("Image")
-                    # axes[1].imshow(mask_np, cmap = "nipy_spectral")  # cmap = 指定colormap
+                    # axes[1].imshow(mask_np, cmap = "nipy_spectral")  # cmap = indicate the colormap
                     axes[1].imshow(mask_rgb)
                     axes[1].set_title("Ground Truth")
                     # axes[2].imshow(pred_np, cmap = "nipy_spectral")
@@ -100,7 +100,7 @@ class SegformerTester:
 if __name__ == "__main__":
 
     parse = argparse.ArgumentParser()
-    parse.add_argument("--model_path", type = str, default = "best_model.pth")  #这个权重文件有点问题，最后需要替换一下
+    parse.add_argument("--model_path", type = str)  # need to assign the specific weight file
     args = parse.parse_args()
 
     cfg = segformerConfig()
