@@ -214,3 +214,11 @@ class SegmentationPreprocessor:
                 cv2.imwrite(os.path.join(self.mask_dir, mask_name), mask)
                 count += 1
         print(f"Generated {count} image-mask pairs in '{self.save_dir}'")
+    
+if __name__ == "__main__":
+
+    data_loader = DataLoader()
+    shp_data = data_loader.shp_data
+    preprocessor = SegmentationPreprocessor(data_loader, save_dir="out_put")
+    preprocessor.generate_patches()
+    

@@ -45,15 +45,15 @@ This project was developed and tested with:
 
 ## How to Run
 ### 1. Prepare Dataset Folder
-Before running any scripts, make sure to create a 'dataset/' directory to store the raw data
+Before running any scripts, make sure to create a 'dataset/' directory to store the raw data   
+Then, run
+   `data_prepare.sh`
 
-### 2. split the dataset
-   Run the dataset splitting script to create training and validation sets:
-   `python split_dataset.py`
+### 2. Train
+   `python train.py`
 
-### 3. Train and Inference
-   ```bash
-   run.sh
-   ```
-**Configuration**  
+### 3. Inference
+   `python inference.py --model_path best_model.pth`  
+
+### 4. Configuration
    You can modify paths and hyperparameters in `config.py` as needed.

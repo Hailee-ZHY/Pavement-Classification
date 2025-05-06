@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Train the model
-echo "Training..."
-python train.py
-
-# Inference on the test dataset
-echo "Inferencing..."
-python inference.py --model_path best_model.pth
+# prepare dataset
+python dataset_loader.py
+echo "split dataset into train/eval/test..."
+python split_dataset.py
