@@ -22,14 +22,6 @@ The dataset, consisting of high-resolution TIFF images and corresponding SHP lab
 - **Dice loss** to enhance fine-detail structures
 
 
-## Result
-![alt text](assets/image-1.png)
-
-**Our fine-tuned model (Prediction 3) shows progressive improvement through training strategies**:
-- Prediction (1): road markings largely missed.
-- Prediction (2): better class recognition, but poor edge precision.
-- Prediction (3): detailed and accurate predictions resembling the ground truth.
-
 ## Project Structure
 | File/Folder           | Description                                                |
 |------------------------|------------------------------------------------------------|
@@ -43,24 +35,25 @@ The dataset, consisting of high-resolution TIFF images and corresponding SHP lab
 | `requirements.txt`     | Python packages required to run the project.               |
 | `run.sh`     | Shell script to execute training and inference.               |
 
-## How to Run
-**Install the required packages**
+## Environment
+This project was developed and tested with:
+
+- Python 3.10.15
+- Other dependencies listed in `requirements.txt`  
+
    `pip install -r requirements.txt`
 
-**Split the dataset**  
+## How to Run
+### 1. Prepare Dataset Folder
+Before running any scripts, make sure to create a 'dataset/' directory to store the raw data
+
+### 2. split the dataset
    Run the dataset splitting script to create training and validation sets:
    `python split_dataset.py`
 
-**Train the model**  
-   Start model training:  
-   `python train.py`
-
-**Test the model**  
-   Evaluate the model after training:  
-   `python ModelsTest.py`
-
- **Configuration**  
+### 3. Train and Inference the model
+   ```bash
+   run.sh
+   ```
+**Configuration**  
    You can modify paths and hyperparameters in `config.py` as needed.
-
-# Add draft
-dataset is provided by Tetra Tech
