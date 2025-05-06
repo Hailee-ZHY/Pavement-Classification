@@ -51,7 +51,7 @@ Before running any scripts, make sure to create a 'dataset/' directory to store 
    Run the dataset splitting script to create training and validation sets:
    `python split_dataset.py`
 
-### 3. Train and Inference the model
+### 3. Train and Inference
    ```bash
    run.sh
    ```
