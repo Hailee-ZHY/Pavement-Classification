@@ -46,7 +46,7 @@ This project was developed and tested with:
 ## How to Run
 ### 1. Prepare Dataset Folder
 Before running any scripts, make sure to create a 'dataset/' directory to store the raw data (*.shp & *.tiff)   
-Then, run   `data_prepare.sh`
+Then, run   `./data_prepare.sh`
 
 ### 2. Train
    `python train.py`
