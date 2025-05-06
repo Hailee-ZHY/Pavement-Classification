@@ -33,7 +33,7 @@ The dataset, consisting of high-resolution TIFF images and corresponding SHP lab
 | `inference.py`        | Model evaluation and testing script.                      |
 | `utils.py`             | Utility functions (metrics calculation, visualization, etc.). |
 | `requirements.txt`     | Python packages required to run the project.               |
-| `run.sh`     | Shell script to execute training and inference.               |
+| `data_prepare.sh`     | Shell script to execute one-time data prepare.               |
 
 ## Environment
 This project was developed and tested with:
@@ -46,8 +46,7 @@ This project was developed and tested with:
 ## How to Run
 ### 1. Prepare Dataset Folder
 Before running any scripts, make sure to create a 'dataset/' directory to store the raw data   
-Then, run
-   `data_prepare.sh`
+Then, run   `data_prepare.sh`
 
 ### 2. Train
    `python train.py`
