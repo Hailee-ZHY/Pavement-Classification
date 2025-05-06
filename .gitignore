@@ -2,6 +2,7 @@
 out_put/
 splits/
 wandb/
+dataset/
 
 # Ignore data files
 EDA.py
